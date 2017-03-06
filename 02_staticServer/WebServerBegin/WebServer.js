@@ -29,6 +29,7 @@ function webserver(req,res) {
           // Serve the file from the buffer
           res.writeHead(200,{'Content-type':contentType});
           res.end(content,'utf-8')
+          // console.log(filepath)
         }else {
           // Serve a 500
           res.writeHead(500);
