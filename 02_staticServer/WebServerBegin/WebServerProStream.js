@@ -3,7 +3,6 @@ const http = require('http');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
-
 let mimes = {
   '.htm':'text/html',
   '.css':'text/css',
@@ -25,18 +24,19 @@ function fileAccess(filepath){
   });
 }
 
-function fileReader(filepath){
-  return new Promise((resolve,reject) =>{
-    fs.readFile(filepath,(error,content) =>{
-      if(!error){
-        resolve(content);
-      }else{
-        reject(error);
-      }
+function streamFile(filepath){
+  return new Promise((resolve,reject)=>{
+    let fileStream = fs.createReadStream(filepath);
+
+    fileStream.on('open',()=>{
+      resolve(fileStream);
+    });
+
+    fileStream.on('error',error=>{
+      reject(error);
     });
   });
 }
-
 
 function webserver(req,res) {
   // if the route requested is '/', then load 'index.htm' or else
@@ -46,10 +46,11 @@ function webserver(req,res) {
   let contentType = mimes[path.extname(filepath)]; // mimnes['.css'] === 'text/css'
 
   fileAccess(filepath)
-    .then(fileReader)
-    .then(content => {
+    .then(streamFile)
+    .then(fileStream => {
       res.writeHead(200,{'Content-type':contentType});
-      res.end(content,'utf8');
+      // res.end(content,'utf8');
+      fileStream.pipe(res);
     })
     .catch(error=>{
       res.writeHead(404);
